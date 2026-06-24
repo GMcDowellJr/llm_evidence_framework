@@ -1,0 +1,86 @@
+# Open Questions
+
+This document tracks unresolved design questions. It is intentionally provisional.
+
+## Framework scope
+
+- Is this framework only for local evidence packages, or also for database-backed evidence stores?
+- Should this repo define a general package contract, or only discovery scaffolds?
+- What is the minimum viable evidence package?
+- What belongs in the reusable framework versus the domain-specific package?
+
+## File formats
+
+- Should evidence maps eventually be markdown, YAML, JSON, or a combination?
+- Should question routes be human-readable markdown or machine-readable records?
+- Should script recipes be structured enough for automated generation?
+- When should schemas be introduced?
+- What information belongs in front matter versus body text?
+
+## Authority and provenance
+
+- How should authority levels be represented?
+- What artifact wins when summaries and deterministic data disagree?
+- How should user-declared, inferred, observed, computed, and LLM-derived fields be labeled?
+- Should every generated package have a package ID and hashes?
+- How important are checksums at the first implementation stage?
+
+## Missing and null values
+
+- How many null states are needed?
+- How should the package distinguish:
+  - missing
+  - not collected
+  - not applicable
+  - collected but zero
+  - collected but failed
+  - redacted
+  - unknown
+- Should null semantics be global or package-specific?
+
+## Comparability
+
+- What rules determine whether two runs, files, projects, or packages are comparable?
+- Should comparability be computed deterministically?
+- Should the LLM be allowed to make weak comparability judgments?
+- What minimum metadata is required to compare two runs?
+
+## Question routes
+
+- What makes a question route reusable?
+- How many times should a question recur before it is promoted?
+- Should routes have confidence or maturity labels?
+- Should routes include negative guidance, such as “do not use this file for this question”?
+- Should question routes be package-specific only, or can some be generalized?
+
+## Script recipes
+
+- How detailed should a script recipe be before becoming useful?
+- Should recipes include example output?
+- Should recipes specify Python, PowerShell, SQL, or tool-neutral logic?
+- Should recipes prefer pandas outputs, CSV exports, markdown tables, or JSON?
+- When should a recipe become a deterministic extractor?
+
+## Context budget
+
+- What is the target maximum size for a default chat evidence package?
+- Should the package explicitly mark files as default-context, optional-context, or drill-down-only?
+- Should the package include a compiled LLM context file?
+- How should historical packages be summarized without overloading context?
+
+## Testing
+
+- What are the smallest useful test packages?
+- Should test packages include known-bad examples?
+- How do we test whether the LLM avoids overclaiming?
+- How do we test context compilation?
+- Should prompt behavior be tested manually or with automated regression prompts?
+
+## Revit Open Capture example
+
+- Which artifacts are always expected?
+- Which fields are stable across harness versions?
+- How should model identity be verified?
+- What makes a run “verified cold” versus merely “declared cold”?
+- How should Desktop Connector activity be represented without implying causation?
+- What comparison order is most useful for cold/warm testing?
