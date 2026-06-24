@@ -1,154 +1,99 @@
-# Python Project Template — CI + Guardrails
+# LLM Evidence Framework Seed
 
-This repository is a **starter template** for Python projects that want:
-- automated quality checks from day one
-- fast local iteration
-- early detection of error-handling and semantic drift issues
+This repository is a starting point for developing a framework that helps deterministic evidence packages become usable in LLM-assisted analysis without asking the LLM to invent unsupported facts, infer hidden structure, or overstate conclusions.
 
-It is intentionally **minimal and opinionated**.
+This is not yet a finalized standard, schema, or implementation contract. It is a field notebook and discovery scaffold.
 
----
+## Current thesis
 
-## What this template guarantees
+Deterministic systems should produce trustworthy evidence. LLMs should help users discuss what that evidence may suggest.
 
-From the first commit:
+The framework separates:
 
-- ✅ **Continuous Integration (CI)** runs on every push and pull request
-- ✅ **Linting** catches common correctness and robustness issues
-- ✅ **Tests** must pass before code can be merged
-- ✅ Rules are **explicit, versioned, and automated**
-- ✅ “Works on my machine” failures are reduced by clean CI environments
+- deterministic evidence
+- evidence structure
+- package-specific interpretation
+- conversational reasoning rules
+- question routing
+- reusable extraction recipes
+- eventual deterministic extractors
 
-This template focuses on **how code is merged**, not what the code does.
+The goal is not to put all evidence into the chat context. The goal is to make the evidence archive navigable, comparable, and epistemically bounded.
 
----
+## Starting structure
 
-## What this template does *not* guarantee
+```text
+notes/
+  current_thesis.md
+  open_questions.md
 
-- ❌ Correct algorithms or domain logic
-- ❌ Complete test coverage
-- ❌ Optimal performance
-- ❌ Freedom from design mistakes
+discovery/
+  package_intake_questions.md
+  evidence_map_discovery.md
+  question_route_discovery.md
+  script_recipe_discovery.md
 
-Those emerge during design and integration.  
-The goal here is to make problems **visible early and cheaply**, not to eliminate them magically.
+patterns/
+  deterministic_to_llm_boundary.md
 
----
+examples/
+  revit_open_capture/
+    notes.md
+```
 
-## Included tooling
+## Maturity model
 
-- **pytest** — automated tests
-- **ruff** — fast static analysis (linting)
-- **GitHub Actions** — CI execution
-- **pyproject.toml** — single source of tool configuration
+The expected promotion path is:
 
-All tooling is optional to extend, but none is optional to bypass once enabled.
+```text
+ad hoc question
+â candidate question route
+â question route
+â script recipe
+â deterministic extractor
+â rollup field or standard report
+```
 
----
+The first repo phase should preserve uncertainty. Durable schemas, validators, and formal skill files should come later, after the framework has been tested against real evidence packages.
 
-## Repository structure (baseline)
+## Terms
 
-- `.github/workflows/ci.yml`  
-  CI pipeline (lint + tests on PRs and pushes)
+### Evidence archive
 
-- `pyproject.toml`  
-  Tool configuration (ruff, pytest)
+The full set of deterministic outputs, logs, CSVs, JSON, markdown, and raw artifacts produced by a system.
 
-- `requirements-dev.txt`  
-  Development dependencies (testing, linting)
+### Chat evidence package
 
-- `tests/`  
-  Test suite (starts minimal; grows over time)
+A compact subset of evidence and context intended for use inside an LLM conversation.
 
-- `CONTRIBUTING.md`  
-  Contribution and workflow rules
+### Evidence map
 
----
+A deterministic description of what files exist, what each file contains, what grain each file represents, and how files relate.
 
-## Local setup
+### Question route
 
-Create and activate a virtual environment:
+A reusable guide for where to look when a recurring analytical question appears.
 
-    python -m venv .venv
-    source .venv/Scripts/activate   # Windows (Git Bash)
-    python -m pip install --upgrade pip
-    pip install -r requirements-dev.txt
-    if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+### Script recipe
 
-Run checks locally:
+A reusable extraction pattern that tells the LLM or user how to pull a targeted answer from the evidence archive.
 
-    ruff check .
-    pytest
+### Deterministic extractor
 
-CI will run the same checks automatically.
+A promoted script or tool that implements a stable script recipe without relying on the LLM to recreate it each time.
 
----
+## Initial implementation target
 
-## Development workflow (expected)
+The first concrete example is Revit Open Capture evidence, including:
 
-1. Create a feature branch
-2. Make changes
-3. Run:
-   - ruff check .
-   - pytest
-4. Commit and push
-5. Open a pull request
-6. Merge only when CI is green
-
-If CI fails, the code is not ready to merge.
-
----
-
-## Design philosophy
-
-This template assumes:
-
-- Bugs are cheaper to fix when found early
-- Silent failures are worse than loud ones
-- Inconsistency spreads unless actively constrained
-- Automation beats memory and good intentions
-
-It is designed to **support adversarial review**, not replace it.
-
----
-
-## When to extend this template
-
-Add rules or tooling only when:
-- the same issue has appeared in multiple projects
-- the rule is clearly non-project-specific
-- the cost of enforcement is lower than the cost of drift
-
-Keep the template boring. Let projects be interesting.
-
----
-
-## Using this repository as a template
-
-This repository is intended to be marked as a **GitHub template repository**.
-New projects should be created from it rather than copied manually.
-
-Each new repository gets:
-- a fresh Git history
-- the same guardrails
-- freedom to evolve independently
-
----
-
-## Questions this template intentionally answers
-
-- “How do we know code is safe to merge?”
-- “What runs automatically, and when?”
-- “What rules are non-negotiable?”
-
-Questions it intentionally does not answer:
-
-- “Is this the best design?”
-- “Is this fast enough?”
-- “Is this the right abstraction?”
-
-Those belong to design and review—not scaffolding.
-
----
-
-If this README ever needs to explain *why* the rules exist, the template has already failed.
+- cold/warm open sequences
+- cache and hydration signals
+- Desktop Connector activity
+- journal events
+- process samples
+- network samples
+- run manifest
+- evidence rollup
+- evidence flags
+- model identity checks
+- comparability warnings
