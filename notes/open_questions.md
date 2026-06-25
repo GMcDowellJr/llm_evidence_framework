@@ -22,6 +22,8 @@ This document tracks unresolved design questions. It is intentionally provisiona
 - How should authority levels be represented?
 - What artifact wins when summaries and deterministic data disagree?
 - How should user-declared, inferred, observed, computed, and LLM-derived fields be labeled?
+  *Working answer: as origin + fidelity + authority + limits (the four components of
+  epistemic provenance). See `patterns/deterministic_to_llm_boundary.md`.*
 - Should every generated package have a package ID and hashes?
 - How important are checksums at the first implementation stage?
 
@@ -50,7 +52,7 @@ This document tracks unresolved design questions. It is intentionally provisiona
 - What makes a question route reusable?
 - How many times should a question recur before it is promoted?
 - Should routes have confidence or maturity labels?
-- Should routes include negative guidance, such as “do not use this file for this question”?
+- Should routes include negative guidance, such as "do not use this file for this question"?
 - Should question routes be package-specific only, or can some be generalized?
 
 ## Script recipes
@@ -68,6 +70,22 @@ This document tracks unresolved design questions. It is intentionally provisiona
 - Should the package include a compiled LLM context file?
 - How should historical packages be summarized without overloading context?
 
+## Prose evidence
+
+- When is a prose extraction pattern stable enough to become a deterministic extractor?
+- Should extraction fidelity be recorded per-commitment or per-document?
+- What is the minimum source span reference needed for traceability?
+  (section / paragraph / sentence / character offset?)
+- How should the interpretation guide encode absence semantics — as rules, examples, or both?
+- Should semantic commitment types be standardized across package types or defined
+  per package?
+- How should conflicting extractions from the same document be handled?
+  (two reviewers reading the same sentence as a decision vs. a consideration)
+- Should the package health check flag documents that have not been through extraction
+  review?
+- Is there a practical threshold at which semantic prose should be declared out of scope
+  for extraction and handled only through interpretation guide constraints?
+
 ## Testing
 
 - What are the smallest useful test packages?
@@ -75,12 +93,3 @@ This document tracks unresolved design questions. It is intentionally provisiona
 - How do we test whether the LLM avoids overclaiming?
 - How do we test context compilation?
 - Should prompt behavior be tested manually or with automated regression prompts?
-
-## Revit Open Capture example
-
-- Which artifacts are always expected?
-- Which fields are stable across harness versions?
-- How should model identity be verified?
-- What makes a run “verified cold” versus merely “declared cold”?
-- How should Desktop Connector activity be represented without implying causation?
-- What comparison order is most useful for cold/warm testing?
