@@ -28,6 +28,86 @@ Deterministic systems make evidence trustworthy.
 LLMs make evidence discussable.
 ```
 
+The technology boundary — deterministic vs LLM — is a proxy for an underlying property:
+**explicit epistemic provenance**.
+
+Deterministic outputs carry epistemic provenance by construction. The full production
+history of every field is known, traceable, and reproducible. Prose evidence must acquire
+epistemic provenance through structured extraction and review.
+
+The boundary restated:
+
+```text
+Before the LLM reasons about evidence, every piece of evidence must carry
+explicit epistemic provenance. Deterministic outputs have this by default.
+Prose evidence must earn it.
+```
+
+### Components of epistemic provenance
+
+Every evidence item — whether a CSV field or an extracted prose commitment — should carry
+four things before it crosses the boundary:
+
+**Origin** — how was this produced?
+
+```text
+deterministic computation
+LLM extraction
+human observation
+model inference
+```
+
+**Fidelity** — how faithfully does this item represent its source?
+
+```text
+exact              (deterministic data — fidelity is exact by definition)
+faithful_paraphrase
+cross_span_inference
+implied_reading
+```
+
+For deterministic data, fidelity is exact by construction. For prose extractions, fidelity
+must be labeled explicitly. A human-reviewed extraction (high provenance) with an implied
+reading (low fidelity) is still a weak evidence item.
+
+**Authority** — what epistemic weight can this carry in downstream reasoning?
+
+Shaped by commitment type and review outcome. The existing authority levels apply:
+
+```text
+Authoritative deterministic evidence
+Controlled interpretation
+Convenience summary
+User-provided note
+LLM-generated provisional interpretation
+```
+
+**Limits** — what can this item not answer?
+
+Including absence semantics: what does it mean that a topic was not mentioned in this
+document or artifact? Limits should be explicit, not left to the LLM to infer.
+
+### Prose evidence and the boundary
+
+For structured data, crossing the boundary is automatic — the deterministic extractor runs
+and provenance is established. For prose evidence, crossing the boundary requires a
+deliberate path:
+
+```text
+raw prose document
+  → LLM extraction with source span anchor (approaching boundary)
+  → human-reviewed extraction artifact    (above boundary, provisional authority)
+  → stable extraction with confirmed authority level (controlled interpretation)
+  → deterministic extractor if extraction pattern stabilizes (authoritative)
+```
+
+Until that sequence completes, the prose document sits below the boundary. The
+interpretation guide constrains how the LLM reads it, but the LLM is operating on
+evidence without explicit provenance markers. That is an honest acknowledgment of the
+epistemic state, not a framework failure.
+
+See `patterns/prose_evidence.md` for the full prose evidence pattern.
+
 ## Deterministic responsibilities
 
 The deterministic layer should own:
@@ -46,7 +126,8 @@ The deterministic layer should own:
 - known collection failures
 - deterministic comparability checks where possible
 
-The deterministic layer may produce summaries, but summaries should remain traceable to source artifacts.
+The deterministic layer may produce summaries, but summaries should remain traceable to
+source artifacts.
 
 ## LLM responsibilities
 
@@ -86,6 +167,9 @@ A deterministic navigation layer describing what exists and where to look.
 
 Package-specific semantics explaining how signals should and should not be understood.
 
+For prose-heavy packages, the interpretation guide also encodes rhetorical conventions,
+absence semantics, and document authority levels before the LLM reasons from the prose.
+
 ### Question routing
 
 Curated or semi-curated guide to recurring question types and relevant artifacts.
@@ -115,7 +199,8 @@ LLM-generated provisional interpretation
 Example rule:
 
 ```text
-If a generated summary conflicts with a manifest or deterministic CSV, the deterministic artifact wins.
+If a generated summary conflicts with a manifest or deterministic CSV, the
+deterministic artifact wins.
 ```
 
 ## Missing-value pattern
@@ -140,9 +225,11 @@ into a single blank field.
 
 Comparisons should be gated.
 
-A package should define what makes records comparable, weakly comparable, or not comparable.
+A package should define what makes records comparable, weakly comparable, or not
+comparable.
 
-The LLM should not be allowed to casually compare runs or files when required identity or collection fields differ.
+The LLM should not be allowed to casually compare runs or files when required identity or
+collection fields differ.
 
 ## Context-budget pattern
 
@@ -212,4 +299,5 @@ Ad hoc LLM answer
 → rollup metric
 ```
 
-If the LLM is repeatedly generating the same script, the system likely needs a deterministic extractor.
+If the LLM is repeatedly generating the same script, the system likely needs a
+deterministic extractor.
