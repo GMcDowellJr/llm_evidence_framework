@@ -94,11 +94,16 @@ commitment_type:      decision | constraint | consideration |
 content:              ...
 source_document:      ...
 source_span:          [section, paragraph, or sentence reference]
-extraction_fidelity:  direct_quote | faithful_paraphrase |
+source_span_text:     [verbatim text of source span, stored for embedding]
+extraction_fidelity:  direct_quote | faithful_paraphrase |    ← LLM self-report
                       cross_span_inference | implied_reading
-provenance_status:    observed | inferred | user_confirmed
-authority_level:      authoritative | controlled_interpretation |
-                      provisional | llm_generated
+fidelity_similarity:  0.0–1.0                                 ← vector score
+fidelity_review_flag: auto | low_similarity | type_mismatch | reviewed
+confidence_band:      auto-provisional | use-confirmed | human-reviewed
+use_count:            N   ← LLM sessions that reasoned against this commitment
+contradiction_count:  N   ← times flagged as wrong
+similarity_mean:      0.0–1.0  ← running average across instances
+similarity_variance:  0.0–1.0  ← stability of pattern across instances
 extracted_by:         [model, prompt_version, timestamp]
 reviewed_by:          [reviewer, date] or null
 ```
@@ -112,39 +117,94 @@ distinguish a direct quote from an implied reading.
 
 ## Promotion path for prose evidence
 
-Prose evidence sits below the epistemic provenance boundary until it has been extracted
-and reviewed. The path across the boundary:
+Prose evidence moves from below the epistemic provenance boundary toward higher
+confidence through two mechanisms: use-driven accumulation and targeted human review.
+Human review is not a front-end gate before use — it is a background process triggered
+by consequence or anomaly.
 
 ```text
 raw prose document
   (below the boundary — no explicit provenance)
 
-LLM extraction, unreviewed
-  (below the boundary — but explicitly labeled as such)
-
 LLM extraction + source span anchor
-  (approaching the boundary — fidelity is now traceable)
+  (approaching the boundary — fidelity is traceable, use at auto-provisional)
 
-human-reviewed extraction artifact
-  (above the boundary — provisional authority)
+auto-provisional
+  (operating state — labeled explicitly, LLM surfaces this in answers)
 
-stable extraction with confirmed authority level
-  (above the boundary — controlled interpretation)
+use-confirmed
+  (accumulated through use — earned, not reviewed; see confidence accumulation below)
+
+human-reviewed
+  (targeted intervention — triggered by consequence, not pipeline position)
 
 deterministic extractor if extraction pattern stabilizes
-  (above the boundary — authoritative)
+  (above the boundary — authoritative; prose evidence becomes equivalent to CSV)
 ```
+
+The LLM can reason against `auto-provisional` and `use-confirmed` commitments. It
+surfaces the confidence band in its answer. The analyst decides whether that confidence
+level is sufficient for the question at hand — which is the correct decision point.
+A low-stakes exploratory question can run on `auto-provisional`. A conclusion that will
+be acted on may warrant triggering human review for the specific commitments it depends
+on.
 
 When extraction logic becomes stable — same commitment types, same document structure,
 same fields reliably present across instances — it can be promoted to a deterministic
 extractor. At that point, prose evidence becomes structurally equivalent to CSV evidence
 for the purposes of the boundary.
 
+## Confidence accumulation
+
+`use-confirmed` is earned through accumulated use signals, not through review.
+The capture system tracks these signals in the background:
+
+**Signals that raise confidence:**
+- Repeated extraction of the same commitment from the same document type with
+  stable similarity scores across instances
+- LLM sessions that reason against the commitment without flagging anomalies
+- Low similarity variance across instances (the extraction pattern is stable)
+- Pattern promotion — the extraction template has been confirmed for this document type
+- LLM self-report and vector similarity in agreement
+
+**Signals that reset or flag confidence:**
+- Contradiction — an analyst or the LLM flags the extraction as wrong
+- High similarity variance across instances (the pattern is less stable than it appeared)
+- Document version change — the source document has been updated; the extraction
+  needs re-anchoring
+- High negation or modality risk in commitment type — `constraint` and `rejected_alternative`
+  commitments involving negated language should have a lower accumulation ceiling before
+  triggering a soft review recommendation
+
+The confidence accumulation model is analogous to OB's trust ladder: promotion through
+accumulated use and absence of contradiction, not through deliberate review of every
+instance.
+
+## The review ceiling
+
+`use-confirmed` confidence never automatically crosses into `human-reviewed`.
+
+The reason is specific: accumulated use does not fix the failure modes that similarity
+scoring misses. Commitment type misclassification — extracting "we decided X" from
+"we considered X" — scores high similarity and will not be corrected by repeated use.
+Twenty sessions reasoning against a misclassified commitment are twenty instances of
+the same error propagating, not twenty confirmations of correctness.
+
+Human review remains the authority boundary for high-stakes claims. It activates when:
+
+- A conclusion the analyst is about to act on depends on a `use-confirmed` commitment
+- An anomaly is flagged — contradiction signal, high similarity variance, version change
+- A commitment type carries high negation or modality risk and has not been reviewed
+
+Everything else operates at `use-confirmed` level. The review burden is proportional
+to consequence, not to extraction volume.
+
 ## Honest ceiling for semantic prose
 
 For prose where stabilization is not possible, the promotion path tops out at
-human-reviewed extraction with explicit authority limits. The interpretation guide then
-carries the constraining work that the structured package does for structured data.
+`use-confirmed` with explicit authority limits. Human review may be triggered by
+consequence but is not automatically required. The interpretation guide carries the
+constraining work that the structured package does for structured data.
 
 This is not a failure state. It is the correct epistemic position for evidence that
 cannot be fully reduced to structured form.
@@ -175,83 +235,29 @@ entirely different epistemic weight.
 says. A design rationale document can tell you why a decision was made but probably
 cannot tell you whether that decision was implemented as described.
 
-## Automated fidelity scoring
-
-Vector similarity between the source span embedding and the extraction embedding is a
-candidate mechanism for prioritizing human review of extracted commitments.
-
-The signal measures semantic overlap — whether the same concepts and relationships are
-present in both the source and the extraction. This is useful for detecting gross
-faithfulness failures and for sorting the review queue, but it is not a substitute for
-human review.
-
-### What similarity scoring catches
-
-- Extractions that introduce concepts not present in the source span
-- Extractions that lose key content from the source span
-- Cross-span inferences that diverge significantly from any individual span
-- Systematic drift in a document type (outlier detection across a corpus)
-
-### What similarity scoring misses
-
-**Commitment type misclassification** is the highest-stakes failure and the least
-visible to vector similarity. "We considered X" → "We decided X" scores high similarity
-because the concepts and entities are identical. The fidelity score will not flag this.
-Commitment type review cannot be delegated to similarity scoring.
-
-**Negation and modality** are poorly captured by standard sentence embeddings. "We will
-not use X" and "We will use X" have high cosine similarity. Extractions involving
-negated constraints or conditional decisions should be flagged for mandatory review
-regardless of similarity score.
-
-### Integration with the extraction artifact
-
-The extraction artifact carries two fidelity signals that should be evaluated together:
-
-```yaml
-extraction_fidelity:   direct_quote | faithful_paraphrase |    ← LLM self-report
-                       cross_span_inference | implied_reading
-fidelity_similarity:   0.0–1.0                                 ← vector score
-fidelity_review_flag:  auto | low_similarity | type_mismatch | reviewed
-```
-
-Candidate thresholds (to be validated against real packages):
-
-```text
-similarity > 0.85 AND fidelity ∈ {direct_quote, faithful_paraphrase}
-  → auto  (eligible for spot review, no immediate block)
-
-similarity 0.6–0.85 OR fidelity = cross_span_inference
-  → low_similarity  (review candidate)
-
-similarity < 0.6
-  → low_similarity  (review required before use above provisional authority)
-
-LLM reports faithful_paraphrase AND similarity < 0.70
-  → type_mismatch  (LLM self-report and vector signal disagree — higher priority)
-```
-
-Divergence between LLM self-report and vector similarity is a stronger flag than either
-signal alone. Agreement is weak confirmation; disagreement is a hard review trigger.
-
-### Scope of the mechanism
-
-Similarity scoring makes the human review step cheaper by sorting the queue. It does
-not make the review step smaller. Extractions that score well can be reviewed more
-quickly; extractions that diverge are prioritized. The human review gate remains the
-authority boundary for all extractions above provisional level.
-
 ## Relationship to the capture system
 
-The capture system for a prose-heavy package should track:
+The capture system is the confidence accumulation mechanism. It runs in the background,
+not as a review queue. For a prose-heavy package it tracks:
 
-- which documents have been through extraction review
-- which commitment types recur across documents of the same type
-- which extraction patterns are stable enough to become recipes
+- which documents have been through extraction
+- use signals per commitment — sessions that reasoned against it, contradiction flags,
+  similarity stability
+- which commitments have accumulated enough use signals to move from `auto-provisional`
+  to `use-confirmed`
+- which extraction patterns are stable enough to become recipes or deterministic
+  extractors
 - which absence-semantics rules were invoked in answering a question
-- which questions could not be answered because the relevant document
-  had not been extracted yet
+- which questions could not be answered because the relevant document had not been
+  extracted yet
+- which commitments have active contradiction flags or high similarity variance
+  requiring targeted review
+
+The output surfaced to the analyst is not a review queue. It is a confidence state:
+which commitments recent analysis depended on, what their current confidence band is,
+which have accumulated enough use to recommend pattern promotion, and which have
+anomaly flags worth examining.
 
 Repeated inability to answer a question due to unextracted prose is a signal to
-prioritize that document for extraction review — the same way repeated analysis
-blockers in structured packages become package health check candidates.
+prioritize that document for extraction — the same way repeated analysis blockers in
+structured packages become package health check candidates.
