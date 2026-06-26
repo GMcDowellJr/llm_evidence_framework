@@ -81,28 +81,43 @@ This document tracks unresolved design questions. It is intentionally provisiona
   per package?
 - How should conflicting extractions from the same document be handled?
   (two reviewers reading the same sentence as a decision vs. a consideration)
-- Should the package health check flag documents that have not been through extraction
-  review?
+- Should the package health check flag documents that have not been through extraction?
 - Is there a practical threshold at which semantic prose should be declared out of scope
   for extraction and handled only through interpretation guide constraints?
-- Can vector similarity between source span and extracted commitment be used as
-  an automated fidelity scoring mechanism to prioritize human review?
+- Can vector similarity between source span and extracted commitment be used as an
+  automated fidelity scoring mechanism to prioritize human review?
   - What embedding model and similarity threshold is appropriate?
-  - How should cross-span extractions be handled — compare against concatenated
-    spans, the first span, or the full document?
-  - Should the score be compared against LLM-reported fidelity as a cross-validation
-    signal? (LLM reports faithful_paraphrase but similarity is low → harder review flag)
-  - Can the OB dedup similarity infrastructure (cosine at 0.85) be reused here
-    with different threshold semantics?
-  - Is similarity scoring useful as an outlier detector across a corpus of same-type
-    documents, independent of absolute score?
+  - How should cross-span extractions be scored — concatenated spans, first span,
+    or full document?
+  - Should LLM-reported fidelity and vector similarity be cross-validated?
+    (LLM reports faithful_paraphrase but similarity is low → harder review flag)
+  - Can the OB dedup similarity infrastructure be reused with different threshold
+    semantics?
 - What failure modes does similarity scoring miss?
   - Commitment type misclassification (decision vs. consideration) has high similarity
     and is the highest-stakes failure — how should this be compensated for?
   - Negation and modality are poorly captured by standard sentence embeddings —
     should commitment types with high negation risk be flagged for mandatory review
     regardless of similarity score?
-    
+
+## Review and confidence scaling
+
+- What use_count threshold should move a commitment from `auto-provisional` to
+  `use-confirmed`? Should it vary by commitment type?
+- What contradiction_count should reset a commitment's confidence band?
+- How should similarity_variance be weighted relative to similarity_mean?
+  (a stable low score vs. a high but erratic score)
+- Should pattern-level promotion (extraction template confirmed for a document type)
+  accelerate confidence accumulation for individual instances that match it?
+- How should the capture system surface the confidence dashboard to the analyst —
+  per session, per package, or on demand?
+- Should the framework define a recommended review cadence, or leave it entirely
+  consequence-triggered?
+- How should document version changes be detected and propagated to invalidate
+  existing extractions?
+- Is `use-confirmed` the right name, or does it overstate the epistemic status?
+  Should it be labeled more conservatively (e.g., `accumulated-provisional`)?
+
 ## Testing
 
 - What are the smallest useful test packages?
