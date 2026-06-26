@@ -85,7 +85,24 @@ This document tracks unresolved design questions. It is intentionally provisiona
   review?
 - Is there a practical threshold at which semantic prose should be declared out of scope
   for extraction and handled only through interpretation guide constraints?
-
+- Can vector similarity between source span and extracted commitment be used as
+  an automated fidelity scoring mechanism to prioritize human review?
+  - What embedding model and similarity threshold is appropriate?
+  - How should cross-span extractions be handled — compare against concatenated
+    spans, the first span, or the full document?
+  - Should the score be compared against LLM-reported fidelity as a cross-validation
+    signal? (LLM reports faithful_paraphrase but similarity is low → harder review flag)
+  - Can the OB dedup similarity infrastructure (cosine at 0.85) be reused here
+    with different threshold semantics?
+  - Is similarity scoring useful as an outlier detector across a corpus of same-type
+    documents, independent of absolute score?
+- What failure modes does similarity scoring miss?
+  - Commitment type misclassification (decision vs. consideration) has high similarity
+    and is the highest-stakes failure — how should this be compensated for?
+  - Negation and modality are poorly captured by standard sentence embeddings —
+    should commitment types with high negation risk be flagged for mandatory review
+    regardless of similarity score?
+    
 ## Testing
 
 - What are the smallest useful test packages?
