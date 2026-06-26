@@ -175,6 +175,72 @@ entirely different epistemic weight.
 says. A design rationale document can tell you why a decision was made but probably
 cannot tell you whether that decision was implemented as described.
 
+## Automated fidelity scoring
+
+Vector similarity between the source span embedding and the extraction embedding is a
+candidate mechanism for prioritizing human review of extracted commitments.
+
+The signal measures semantic overlap — whether the same concepts and relationships are
+present in both the source and the extraction. This is useful for detecting gross
+faithfulness failures and for sorting the review queue, but it is not a substitute for
+human review.
+
+### What similarity scoring catches
+
+- Extractions that introduce concepts not present in the source span
+- Extractions that lose key content from the source span
+- Cross-span inferences that diverge significantly from any individual span
+- Systematic drift in a document type (outlier detection across a corpus)
+
+### What similarity scoring misses
+
+**Commitment type misclassification** is the highest-stakes failure and the least
+visible to vector similarity. "We considered X" → "We decided X" scores high similarity
+because the concepts and entities are identical. The fidelity score will not flag this.
+Commitment type review cannot be delegated to similarity scoring.
+
+**Negation and modality** are poorly captured by standard sentence embeddings. "We will
+not use X" and "We will use X" have high cosine similarity. Extractions involving
+negated constraints or conditional decisions should be flagged for mandatory review
+regardless of similarity score.
+
+### Integration with the extraction artifact
+
+The extraction artifact carries two fidelity signals that should be evaluated together:
+
+```yaml
+extraction_fidelity:   direct_quote | faithful_paraphrase |    ← LLM self-report
+                       cross_span_inference | implied_reading
+fidelity_similarity:   0.0–1.0                                 ← vector score
+fidelity_review_flag:  auto | low_similarity | type_mismatch | reviewed
+```
+
+Candidate thresholds (to be validated against real packages):
+
+```text
+similarity > 0.85 AND fidelity ∈ {direct_quote, faithful_paraphrase}
+  → auto  (eligible for spot review, no immediate block)
+
+similarity 0.6–0.85 OR fidelity = cross_span_inference
+  → low_similarity  (review candidate)
+
+similarity < 0.6
+  → low_similarity  (review required before use above provisional authority)
+
+LLM reports faithful_paraphrase AND similarity < 0.70
+  → type_mismatch  (LLM self-report and vector signal disagree — higher priority)
+```
+
+Divergence between LLM self-report and vector similarity is a stronger flag than either
+signal alone. Agreement is weak confirmation; disagreement is a hard review trigger.
+
+### Scope of the mechanism
+
+Similarity scoring makes the human review step cheaper by sorting the queue. It does
+not make the review step smaller. Extractions that score well can be reviewed more
+quickly; extractions that diverge are prioritized. The human review gate remains the
+authority boundary for all extractions above provisional level.
+
 ## Relationship to the capture system
 
 The capture system for a prose-heavy package should track:
